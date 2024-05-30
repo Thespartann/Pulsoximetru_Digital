@@ -5,7 +5,11 @@
 #include <Wire.h> // Libraria pentru I2C
 #include <LiquidCrystal_I2C.h> // Libraria pentru display
 #include "MAX30100_PulseOximeter.h" // Libraria pentru Pulsoximetru
+#include <SD.h> // Libraria pentru cardul SD
+#include <SPI.h> // Libraria pentru interfata seriala SPI
+
 #define REPORTING_PERIOD_MS     1000
+#define CHIP_SELECT_PIN         10
 
 // Initializam LCD-ul
 LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE); 
@@ -39,20 +43,41 @@ void setup() {
 
     // Inregistram o functie de apel
     pox.setOnBeatDetectedCallback(onBeatDetected);
+
+    // Initializam cardul SD
+    if (!SD.begin(CHIP_SELECT_PIN)) {
+        Serial.println("Inițializare eșuată!");
+        lcd.setCursor(0, 1);
+        lcd.print("Eroare SD");
+        while (1);
+    }
+    Serial.println("Inițializare reușită.");
 }
 
 void loop() {
     // Citim de la senzor
     pox.update();
 
-    // Preia pulsul actualizat si saturatia oxigenului
     if (millis() - tsLastReport > REPORTING_PERIOD_MS) {
-        led.print("Puls:");
-        led.print(pox.getHeartRate());
-        led.print("Puls / SpO2:");
-        led.print(pox.getSpO2());
-        led.println("%");
-
         tsLastReport = millis();
+
+    // Preia pulsul actualizat si saturatia oxigenului
+    lcd.print(" Puls: ");
+    lcd.print(pox.getHeartRate());
+    lcd.print(" SpO2: ");
+    lcd.print(pox.getSpO2());
+    lcd.print("%");
+
+
+        // Salvam datele pe cardul SD
+        File dataFile = SD.open("data.txt", FILE_WRITE);
+        if (dataFile) {
+            dataFile.print(pox.getHeartRate());
+            dataFile.print(",");
+            dataFile.println(pox.getSpO2());
+            dataFile.close();
+        } else {
+            Serial.println("Eroare la deschiderea fișierului.");
+        }
     }
 }
