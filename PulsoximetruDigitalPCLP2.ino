@@ -10,6 +10,7 @@
 
 #define REPORTING_PERIOD_MS     1000
 #define CHIP_SELECT_PIN         10
+#define BUTTON_PIN              9 
 
 // Initializam LCD-ul
 LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE); 
@@ -52,6 +53,16 @@ void setup() {
         while (1);
     }
     Serial.println("Inițializare reușită.");
+    
+    // Setăm pinul butonului ca INPUT_PULLUP
+    // Pentru a folosi rezisența internă
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+    // Așteptăm apăsarea butonului
+    lcd.setCursor(0, 1);
+    lcd.print("Apasa butonul pentru a incepe");
+    while (digitalRead(BUTTON_PIN) == HIGH) {
+        // Așteaptă până când butonul este apăsat
+    } 
 }
 
 void loop() {
